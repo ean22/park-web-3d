@@ -11,7 +11,8 @@ const scene = new THREE.Scene();
 
 const renderer = new THREE.WebGLRenderer( {antialias:true} );
 renderer.setSize( size.width, size.height );
-renderer.setPixelRatio( Math.min( window.devicePixelRatio, 2 ) )
+renderer.setPixelRatio( Math.min( window.devicePixelRatio, 2 ) );
+
 document.body.appendChild( renderer.domElement );
 
 
@@ -19,18 +20,18 @@ document.body.appendChild( renderer.domElement );
 
 let aspect = size.width / size.height;
 const frustum = 2;
-let a = 0;
+const frustumLeftRightCorrection = 1.5;
 const camera = new THREE.OrthographicCamera( 
-    -aspect * frustum,
-    aspect * frustum,
+    -aspect * frustum - frustumLeftRightCorrection,
+    aspect * frustum - frustumLeftRightCorrection,
     frustum,
     -frustum,
     0.1, 
     1000 
 );
 
-camera.position.x = 8.7 + a;
-camera.position.y = 4.1 + a;
+camera.position.x = 8.7;
+camera.position.y = 4.1;
 camera.position.z = -9.1;
 
 scene.add( camera );
@@ -45,26 +46,53 @@ controls.update();
 // Modelo 3D ________________________________________________________________________
 
 const loader = new GLTFLoader();
-loader.load( './public/park.glb', function ( glb ) {
-    scene.add( glb.scene );
+loader.load( 
+    './public/park.glb', 
+    function ( glb ) {
+        glb.scene.traverse( child => {
+            console.log( child );
 
-}, undefined, function ( error ) {
+            if( child.isMesh ){
+                child.castShadow = true; 
+                child.receiveShadow = true;
+            } 
+        } )
+        
+        scene.add( glb.scene );
 
-    console.error( error );
+    }, 
+    undefined, 
+    function ( error ) {
 
-} );
+        console.error( error );
+
+    } 
+);
 
 
 // Luz ________________________________________________________________________
 
-const sum = new THREE.DirectionalLight( 0xFFFFFF );
-scene.add( sum );
+const sun = new THREE.DirectionalLight( 0xFFFFFF );
+sun.position.set( 20, 12, 0); 
 
-const helper = new THREE.DirectionalLightHelper( sum, 5 );
-scene.add( helper );
+scene.add( sun );
+
+const sunHelper = new THREE.DirectionalLightHelper( sun, 5 );
+scene.add( sunHelper );
 
 const light = new THREE.AmbientLight( 0x404040, 8 ); // soft white light
 scene.add( light );
+
+
+// Sombras ________________________________________________________________________
+
+renderer.shadowMap.enabled = true;
+sun.castShadow = true;
+sun.shadow.camera.left = -8;
+sun.shadow.camera.right = 8;
+
+const shadowHelper = new THREE.CameraHelper( sun.shadow.camera );
+scene.add( shadowHelper );
 
 
 // Loop ________________________________________________________________________
@@ -74,8 +102,8 @@ function handleResize(){
     size.height = window.innerHeight;
 
     const aspect = size.width / size.height;
-    camera.left = -aspect * frustum;
-    camera.right = aspect * frustum;
+    -aspect * frustum - frustumLeftRightCorrection,
+    aspect * frustum - frustumLeftRightCorrection,
     camera.top = frustum;
     camera.bottom = -frustum;
 
