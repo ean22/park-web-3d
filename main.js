@@ -12,22 +12,37 @@ const scene = new THREE.Scene();
 const renderer = new THREE.WebGLRenderer( {antialias:true} );
 renderer.setSize( size.width, size.height );
 renderer.setPixelRatio( Math.min( window.devicePixelRatio, 2 ) )
+document.body.appendChild( renderer.domElement );
 
-const camera = new THREE.PerspectiveCamera( 
-    75, 
-    size.width / size.height, 
+
+// Camera________________________________________________________________________
+
+let aspect = size.width / size.height;
+const frustum = 2;
+let a = 0;
+const camera = new THREE.OrthographicCamera( 
+    -aspect * frustum,
+    aspect * frustum,
+    frustum,
+    -frustum,
     0.1, 
-    1000 );
+    1000 
+);
 
-camera.position.x = 5.73177155135177;
-camera.position.y = 0.7358715786179494;
-camera.position.z = -2.7109513188562078;
+camera.position.x = 8.7 + a;
+camera.position.y = 4.1 + a;
+camera.position.z = -9.1;
+
+scene.add( camera );
+
+
+// Controles________________________________________________________________________
 
 const controls = new OrbitControls( camera, renderer.domElement );
 controls.update();
 
-document.body.appendChild( renderer.domElement );
 
+// Modelo 3D ________________________________________________________________________
 
 const loader = new GLTFLoader();
 loader.load( './public/park.glb', function ( glb ) {
@@ -39,15 +54,31 @@ loader.load( './public/park.glb', function ( glb ) {
 
 } );
 
+
+// Luz ________________________________________________________________________
+
+const sum = new THREE.DirectionalLight( 0xFFFFFF );
+scene.add( sum );
+
+const helper = new THREE.DirectionalLightHelper( sum, 5 );
+scene.add( helper );
+
 const light = new THREE.AmbientLight( 0x404040, 8 ); // soft white light
 scene.add( light );
 
+
+// Loop ________________________________________________________________________
 
 function handleResize(){
     size.width = window.innerWidth;
     size.height = window.innerHeight;
 
-    camera.aspect = size.width / size.height;
+    const aspect = size.width / size.height;
+    camera.left = -aspect * frustum;
+    camera.right = aspect * frustum;
+    camera.top = frustum;
+    camera.bottom = -frustum;
+
     camera.updateProjectionMatrix();
 
     renderer.setSize(size.width, size.height)
@@ -58,7 +89,7 @@ window.addEventListener( "resize", handleResize )
 
 function animate() {
     renderer.render( scene, camera );
-    console.log( camera.position, camera.rotation );
+    // console.log( camera.position );
 }
 
 renderer.setAnimationLoop( animate );
