@@ -46,42 +46,18 @@ controls.update();
 
 
 // Modelo 3D ________________________________________________________________________
-// const intersectObjects = [];
-// const intersectObjectsNames = [
-//     "Scene",
-//     "Plane",
-//     "Plane_1",
-//     "Plane_2",
-//     "Plane_3",
-//     "Plane_4",
-//     "Plane_5",
-//     "Plane_6",
-//     "Plane_7",
-//     "Plane_8",
-//     "Plane008",
-//     "Plane008_1",
-//     "painel",
-//     "Cube012",
-//     "Cube012_1",
-//     "Cube012_2",
-//     "Cube012_3"
-// ];
-
 
 const loader = new GLTFLoader();
 loader.load( 
     './public/park.glb', 
     function ( glb ) {
         glb.scene.traverse( child => {
-            // if( intersectObjectsNames.includes( child.name )){
-            //     intersectObjects.push( child );
-            // }
             
             if( child.isMesh ){
                 child.castShadow = true; 
                 child.receiveShadow = true;
             } 
-            // console.log(child);
+            console.log(child);
         } );
         
         scene.add( glb.scene );
@@ -103,8 +79,8 @@ sun.target.position.set( 0, 0, 0 )
 
 scene.add( sun );
 
-const sunHelper = new THREE.DirectionalLightHelper( sun, 5 );
-scene.add( sunHelper );
+// const sunHelper = new THREE.DirectionalLightHelper( sun, 5 );
+// scene.add( sunHelper );
 
 const light = new THREE.AmbientLight( 0x404040, 8 ); // soft white light
 scene.add( light );
@@ -122,14 +98,14 @@ sun.shadow.normalBias = .02;
 sun.shadow.mapSize.height = 1024;
 sun.shadow.mapSize.width = 1024;
 
-const shadowHelper = new THREE.CameraHelper( sun.shadow.camera );
-scene.add( shadowHelper );
+// const shadowHelper = new THREE.CameraHelper( sun.shadow.camera );
+// scene.add( shadowHelper );
 
 // Raycaster ________________________________________________________________________
 
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
-
+let intersectObject = "";
 
 
 // Handlers de Eventos ________________________________________________________________________
@@ -154,8 +130,10 @@ window.addEventListener( "resize", onResize );
 
 
 function onPointerMove( event ) {
-    pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-    pointer.y = ( event.clientY / window.innerHeight ) * 2 + 1;
+    const rect = renderer.domElement.getBoundingClientRect();
+
+    pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 }
 
 window.addEventListener( "pointermove", onPointerMove );
@@ -166,7 +144,7 @@ window.addEventListener( "pointermove", onPointerMove );
 function animate() {
     raycaster.setFromCamera( pointer, camera );
 
-    const intersects = raycaster.intersectObjects( scene.children );
+    const intersects = raycaster.intersectObjects( scene.children, true );
 
     if( intersects.length > 0 ){
         document.body.style.cursor = "pointer";
@@ -174,8 +152,13 @@ function animate() {
 
     for( let i = 0; i < intersects.length; i++ ){
         console.log( intersects[ 0 ].object.parent.name );
-    }
+        // intersects[i].object.material.color.set(0xff0000);
 
+        intersectObject = intersects[ 0 ].object.parent.name;
+        
+    }
+    
+    document.body.style.cursor = "default"
     renderer.render( scene, camera );
 }
     
