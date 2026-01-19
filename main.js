@@ -138,6 +138,22 @@ function onPointerMove( event ) {
 
 window.addEventListener( "pointermove", onPointerMove );
 
+function onClick (){
+    console.log( intersectObject );
+    const modal = document.querySelector(".modal");
+    if( intersectObject === "painel"){
+        modal.classList.toggle("hidden");
+
+        
+    } else{
+        if(!modal.classList.contains("hidden")){
+            modal.classList.toggle("hidden");
+        }
+    }
+}
+
+window.addEventListener( "click", onClick );
+
 
 // Loop ________________________________________________________________________
 
@@ -151,7 +167,7 @@ function animate() {
     }
 
     for( let i = 0; i < intersects.length; i++ ){
-        console.log( intersects[ 0 ].object.parent.name );
+        // console.log( intersects[ 0 ].object.parent.name );
         // intersects[i].object.material.color.set(0xff0000);
 
         intersectObject = intersects[ 0 ].object.parent.name;

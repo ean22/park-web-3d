@@ -3,22 +3,39 @@
   <head>
     <meta charset="utf-8">
     <title>My first three.js app</title>
-    <style>
-      body { margin: 0; }
-    </style>
-        <script type="importmap" defer>
-            {
-                "imports": {
-                    "three": "https://cdn.jsdelivr.net/npm/three@v0.182.0/build/three.module.js",
-                    "three/addons/": "https://cdn.jsdelivr.net/npm/three@v0.182.0/examples/jsm/"
-                }
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Indie+Flower&display=swap" rel="stylesheet">
+    
+    <script type="importmap" async>
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@v0.182.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@v0.182.0/examples/jsm/"
             }
-        </script>
+        }
+    </script>
+    <script type="module" src="/main.js" defer></script>
   </head>
   <body>
-
-
-    <script type="module" src="/main.js"></script>
+    
+    <div class="modal indie-flower-regular hidden">
+      <div class="modal-wrapper">
+        <div class="modal-header">
+          <div class="modal-header-wrapper">
+            Title
+          </div>
+        </div>
+        <div class="modal-content">
+          <div class="modal-content-wrapper">
+            Lorem ipsum dolor sit, amet consectetur adipisicing elit. Blanditiis nemo quos quam, tenetur nulla 
+            ab temporibus beatae! Possimus, maxime. Enim corporis ex voluptatem quaerat aperiam excepturi 
+            voluptates, ut debitis placeat!
+          </div>
+        </div>
+      </div>
+    </div>
 
   </body>
 </html>

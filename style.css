@@ -1,0 +1,45 @@
+body{
+    margin: 0;
+}
+
+.modal{
+    position: absolute;
+    z-index: 3;
+
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+    max-width: 60%;
+    background-color: white;
+    padding: 3px;
+    color: white;
+    box-shadow:  0px 0px 10px 2px rgb(100, 100, 100);
+}
+
+.modal-wrapper{
+    padding: 16px;
+    background-color: rgb(146, 88, 0);
+}
+
+.modal-header{
+    padding-bottom: 12px;
+    font-size: x-large;
+}
+
+.modal-header-wrapper{}
+
+.modal-content{}
+
+.modal-content-wrapper{}
+
+.indie-flower-regular {
+  font-family: "Indie Flower", cursive;
+  font-size: larger;
+  font-weight: 500;
+  font-style: normal;
+}
+
+.hidden{
+    display: none;
+}
