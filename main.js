@@ -1,11 +1,15 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { Octree } from 'three/addons/math/Octree.js';
+import { Capsule } from 'three/addons/math/Capsule.js';
 
 let size = {
     width: window.innerWidth,
     height: window.innerHeight
 };
+
+
 
 const scene = new THREE.Scene();
 // scene.background = "196, 255, 255";
@@ -27,7 +31,16 @@ const character = {
 document.body.appendChild( renderer.domElement );
 
 
-// Camera________________________________________________________________________
+// Fisicas ________________________________________________________________________
+const GRAVITY = 30;
+const CAPSULE_RADIUS = 0.35; 
+const CAPSULE_HEIGHT = 1;
+const JUMP_HEIGHT = 15;
+const MOVE_SPEED = 1;
+
+
+
+// Camera ________________________________________________________________________
 
 let aspect = size.width / size.height;
 const frustum = 2;
@@ -58,7 +71,7 @@ controls.update();
 
 const loader = new GLTFLoader();
 loader.load( 
-    './public/park.glb', 
+    './public/park2.glb', 
     function ( glb ) {
         glb.scene.traverse( child => {
             
@@ -69,7 +82,7 @@ loader.load(
 
             // console.log(child);
 
-            if( child.name === "Cube012"){
+            if( child.name === "coelho"){
                 character.instance = child;
             };
 
