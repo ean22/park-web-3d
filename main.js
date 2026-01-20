@@ -8,7 +8,7 @@ let size = {
 };
 
 const scene = new THREE.Scene();
-scene.background = "196, 255, 255";
+// scene.background = "196, 255, 255";
 
 const renderer = new THREE.WebGLRenderer( {antialias:true} );
 renderer.setSize( size.width, size.height );
@@ -19,7 +19,7 @@ renderer.toneMappingExposure = 1.2;
 const character = {
     instance: null,
     moveDistance: 0.5,
-    jumpHeight: 0.2,
+    jumpHeight: 0.05,
     isMoving: false,
     moveDuration: 0.2
 };
@@ -173,10 +173,23 @@ function onClick(){
     }
 };
 
+function rotationDiff( targetRotation ){
+    const rotationDiff = 
+    ( ( ( ( targetRotation - character.instance.rotation.y ) % ( 2 * Math.PI ) ) + 3 * Math.PI ) % ( 2 * Math.PI ) ) - Math.PI
+    
+    return character.instance.rotation.y + rotationDiff;
+}
+
 function moveCharacter( targetPosition, targetRotation ){
     character.isMoving = true;
+    
+    const finalRotation = rotationDiff( targetRotation );
 
-    const time1 = gsap.timeline();
+    const time1 = gsap.timeline( {
+        onComplete: () => {
+            character.isMoving = false;
+        }
+    } );
 
     time1.to( character.instance.position, {
         x:targetPosition.x,
@@ -184,10 +197,25 @@ function moveCharacter( targetPosition, targetRotation ){
         duration: character.moveDuration
     });
 
-    time1.to( character.instance.rotation, {
-        y:targetRotation,
-        duration: character.moveDuration
-    });
+    time1.to( 
+        character.instance.rotation, 
+        {
+            y:finalRotation,
+            duration: character.moveDuration
+        },
+        0
+    );
+
+    time1.to( 
+        character.instance.position, 
+        {
+            y:character.instance.position.y + character.jumpHeight,
+            duration: character.moveDuration / 2,
+            yoyo: true,
+            repeat: 1
+        },
+        0
+    );
 }
 
 function onKeyDown( event ){  
@@ -227,7 +255,6 @@ function onKeyDown( event ){
 
     moveCharacter( targetPosition, targetRotation );
     
-    character.isMoving = false;
 };
 
 function updateModalContent(){
