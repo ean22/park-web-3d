@@ -2,6 +2,10 @@ body{
     margin: 0;
 }
 
+canvas{
+    background-color: rgb(196, 255, 255);
+}
+
 .modal{
     position: absolute;
     z-index: 3;
