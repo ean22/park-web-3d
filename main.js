@@ -9,8 +9,6 @@ let size = {
     height: window.innerHeight
 };
 
-
-
 const scene = new THREE.Scene();
 // scene.background = "196, 255, 255";
 
@@ -22,10 +20,7 @@ renderer.toneMappingExposure = 1.2;
 
 const character = {
     instance: null,
-    moveDistance: 0.5,
-    jumpHeight: 0.05,
-    isMoving: false,
-    moveDuration: 0.2
+    isMoving: false
 };
 
 document.body.appendChild( renderer.domElement );
@@ -38,7 +33,15 @@ const CAPSULE_HEIGHT = 1;
 const JUMP_HEIGHT = 15;
 const MOVE_SPEED = 1;
 
+const colliderOctree = new Octree();
+const playerCollider = new Capsule(
+    new THREE.Vector3(0, CAPSULE_RADIUS, 0), 
+    new THREE.Vector3(0, CAPSULE_HEIGHT, 0)
+);
 
+let playerOnFloor = false;
+let playerVelocity = new THREE.Vector3();
+let targetRotation = 0;
 
 // Camera ________________________________________________________________________
 
@@ -84,6 +87,13 @@ loader.load(
 
             if( child.name === "coelho"){
                 character.instance = child;
+                playerCollider.start
+                    .copy(child.position)
+                    .add(new THREE.Vector3(0, CAPSULE_RADIUS, 0));
+            };
+
+            if( child.name === "colisao"){
+                colliderOctree.fromGraphNode(child);
             };
 
         } );
@@ -173,7 +183,7 @@ function onPointerMove( event ) {
 };
 
 function onClick(){
-    console.log( intersectObject );
+    // console.log( intersectObject );
     const modal = document.querySelector(".modal");
     if( intersectObject === "painel"){
         updateModalContent();
@@ -186,77 +196,29 @@ function onClick(){
     }
 };
 
-function rotationDiff( targetRotation ){
-    const rotationDiff = 
-    ( ( ( ( targetRotation - character.instance.rotation.y ) % ( 2 * Math.PI ) ) + 3 * Math.PI ) % ( 2 * Math.PI ) ) - Math.PI
-    
-    return character.instance.rotation.y + rotationDiff;
-}
-
-function moveCharacter( targetPosition, targetRotation ){
-    character.isMoving = true;
-    
-    const finalRotation = rotationDiff( targetRotation );
-
-    const time1 = gsap.timeline( {
-        onComplete: () => {
-            character.isMoving = false;
-        }
-    } );
-
-    time1.to( character.instance.position, {
-        x:targetPosition.x,
-        z:targetPosition.z,
-        duration: character.moveDuration
-    });
-
-    time1.to( 
-        character.instance.rotation, 
-        {
-            y:finalRotation,
-            duration: character.moveDuration
-        },
-        0
-    );
-
-    time1.to( 
-        character.instance.position, 
-        {
-            y:character.instance.position.y + character.jumpHeight,
-            duration: character.moveDuration / 2,
-            yoyo: true,
-            repeat: 1
-        },
-        0
-    );
-}
-
 function onKeyDown( event ){  
     if( character.isMoving ) return;
-    
-    const targetPosition = new THREE.Vector3().copy( character.instance.position );
-    let targetRotation = 0;
 
-    switch (event.key.toLowerCase()) {
+    switch ( event.key.toLowerCase() ) {
         case 'w':
-            targetPosition.x -= character.moveDistance;
+            playerVelocity.x -= MOVE_SPEED;
             targetRotation = 0;
 
             break;
 
         case 'a':
-            targetPosition.z += character.moveDistance;
+            playerVelocity.z += MOVE_SPEED;
             targetRotation = -Math.PI / 2;
 
             break;
 
         case 's':
-            targetPosition.x += character.moveDistance;
+            playerVelocity.x += MOVE_SPEED;
             targetRotation = Math.PI;
             break;
         
         case 'd':
-            targetPosition.z -= character.moveDistance;
+            playerVelocity.z -= MOVE_SPEED;
             targetRotation = Math.PI / 2;
 
             break;
@@ -266,7 +228,8 @@ function onKeyDown( event ){
         
         };
 
-    moveCharacter( targetPosition, targetRotation );
+    playerVelocity.y = JUMP_HEIGHT;
+    character.isMoving = true;
     
 };
 
@@ -284,6 +247,42 @@ function highLight( element ){
     document.body.style.cursor = "pointer";
 };
 
+function playerCollision(){
+    const result = colliderOctree.capsuleIntersect( playerCollider );
+    playerOnFloor = false;
+
+    if( result ){
+        playerOnFloor = result.nomal > 0;
+        playerCollider.translate( result.normal.multiplyScalar( result.depth ));
+
+        if( playerOnFloor ){
+            character.isMoving = false;
+            playerVelocity.x = 0;
+            playerVelocity.y = 0;
+        }
+    }
+}
+
+function updatePlayer(){
+    if( !character.instance ) return;
+
+    if( !playerOnFloor ){
+        playerVelocity.y -= GRAVITY * 0.001;
+    }
+
+    playerCollider.translate(playerVelocity.clone().multiplyScalar(0.01));
+    playerCollision();
+
+    character.instance.position.copy(playerCollider.start);
+    character.instance.position.y -= CAPSULE_RADIUS;
+
+    character.instance.rotation.y = THREE.MathUtils.lerp( 
+        character.instance.rotation.y, 
+        targetRotation, 
+        0.1 
+    );
+}
+
 window.addEventListener( "pointermove", onPointerMove );
 window.addEventListener( "resize", onResize );
 window.addEventListener( "click", onClick );
@@ -292,8 +291,9 @@ window.addEventListener( "keydown", onKeyDown );
 // Loop ________________________________________________________________________
 
 function animate() {
+    updatePlayer();
+    
     raycaster.setFromCamera( pointer, camera );
-
     const intersects = raycaster.intersectObjects( scene.children, true );
 
     if( intersects.length > 0 ){
