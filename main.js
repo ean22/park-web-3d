@@ -27,16 +27,17 @@ document.body.appendChild( renderer.domElement );
 
 
 // Fisicas ________________________________________________________________________
-const GRAVITY = 30;
-const CAPSULE_RADIUS = 0.35; 
+const GRAVITY = 3;
+const CAPSULE_RADIUS = 30; 
 const CAPSULE_HEIGHT = 1;
-const JUMP_HEIGHT = 15;
+const JUMP_HEIGHT = 0.5;
 const MOVE_SPEED = 1;
 
 const colliderOctree = new Octree();
 const playerCollider = new Capsule(
     new THREE.Vector3(0, CAPSULE_RADIUS, 0), 
-    new THREE.Vector3(0, CAPSULE_HEIGHT, 0)
+    new THREE.Vector3(0, CAPSULE_HEIGHT, 0),
+    CAPSULE_RADIUS
 );
 
 let playerOnFloor = false;
@@ -47,7 +48,7 @@ let targetRotation = 0;
 
 let aspect = size.width / size.height;
 const frustum = 2;
-const frustumLeftRightCorrection = 1.5;
+const frustumLeftRightCorrection = 0
 const camera = new THREE.OrthographicCamera( 
     -aspect * frustum - frustumLeftRightCorrection,
     aspect * frustum - frustumLeftRightCorrection,
@@ -60,6 +61,8 @@ const camera = new THREE.OrthographicCamera(
 camera.position.x = 8.7;
 camera.position.y = 4.1;
 camera.position.z = -9.1;
+
+const cameraOffset = new THREE.Vector3( camera.position.x, camera.position.y, camera.position.z); 
 
 scene.add( camera );
 
@@ -94,6 +97,7 @@ loader.load(
 
             if( child.name === "colisao"){
                 colliderOctree.fromGraphNode(child);
+                child.visible = false;
             };
 
         } );
@@ -164,8 +168,8 @@ function onResize(){
     size.height = window.innerHeight;
     
     const aspect = size.width / size.height;
-    -aspect * frustum - frustumLeftRightCorrection,
-    aspect * frustum - frustumLeftRightCorrection,
+    camera.left = -aspect * frustum - frustumLeftRightCorrection;
+    camera.right = aspect * frustum - frustumLeftRightCorrection;
     camera.top = frustum;
     camera.bottom = -frustum;
     
@@ -203,24 +207,24 @@ function onKeyDown( event ){
         case 'w':
             playerVelocity.x -= MOVE_SPEED;
             targetRotation = 0;
-
+            console.log("w pressed");
             break;
 
         case 'a':
             playerVelocity.z += MOVE_SPEED;
             targetRotation = -Math.PI / 2;
-
+            console.log("a pressed");
             break;
 
         case 's':
             playerVelocity.x += MOVE_SPEED;
             targetRotation = Math.PI;
-            break;
+                    console.log("s pressed");break;
         
         case 'd':
             playerVelocity.z -= MOVE_SPEED;
             targetRotation = Math.PI / 2;
-
+            console.log("d pressed");
             break;
     
         default:
@@ -252,8 +256,8 @@ function playerCollision(){
     playerOnFloor = false;
 
     if( result ){
-        playerOnFloor = result.nomal > 0;
-        playerCollider.translate( result.normal.multiplyScalar( result.depth ));
+        playerOnFloor = result.normal.y > 0;
+        playerCollider.translate( result.normal.clone().multiplyScalar( result.depth ));
 
         if( playerOnFloor ){
             character.isMoving = false;
@@ -267,7 +271,7 @@ function updatePlayer(){
     if( !character.instance ) return;
 
     if( !playerOnFloor ){
-        playerVelocity.y -= GRAVITY * 0.001;
+        playerVelocity.y -= GRAVITY * 0.01;
     }
 
     playerCollider.translate(playerVelocity.clone().multiplyScalar(0.01));
@@ -293,6 +297,11 @@ window.addEventListener( "keydown", onKeyDown );
 function animate() {
     updatePlayer();
     
+    if( character.instance ){
+        camera.position.copy( character.instance.position ).add( cameraOffset );
+        camera.lookAt( character.instance.position );
+    } 
+
     raycaster.setFromCamera( pointer, camera );
     const intersects = raycaster.intersectObjects( scene.children, true );
 
