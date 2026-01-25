@@ -1,8 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { Octree } from 'three/addons/math/Octree.js';
-import { Capsule } from 'three/addons/math/Capsule.js';
+
 
 let size = {
     width: window.innerWidth,
@@ -10,7 +9,7 @@ let size = {
 };
 
 const scene = new THREE.Scene();
-// scene.background = "196, 255, 255";
+scene.background = "196, 255, 255";
 
 const renderer = new THREE.WebGLRenderer( {antialias:true} );
 renderer.setSize( size.width, size.height );
@@ -18,51 +17,7 @@ renderer.setPixelRatio( Math.min( window.devicePixelRatio, 2 ) );
 renderer.toneMapping = THREE.AgXToneMapping;
 renderer.toneMappingExposure = 1.2;
 
-const character = {
-    instance: null,
-    isMoving: false
-};
-
 document.body.appendChild( renderer.domElement );
-
-
-// Fisicas ________________________________________________________________________
-const GRAVITY = 20;
-const CAPSULE_RADIUS = 0.05; 
-const CAPSULE_HEIGHT = 10;
-const JUMP_HEIGHT = 3;
-const MOVE_SPEED = 1;
-
-const colliderOctree = new Octree();
-const playerCollider = new Capsule(
-    new THREE.Vector3(0, CAPSULE_RADIUS, 0), 
-    new THREE.Vector3(0, CAPSULE_HEIGHT, 0),
-    CAPSULE_RADIUS
-);
-
-let playerOnFloor = false;
-let playerVelocity = new THREE.Vector3( 0,0,0);
-let targetRotation = 0;
-
-
-
-
-const capsuleGeometry = new THREE.CapsuleGeometry(
-  CAPSULE_RADIUS,
-  CAPSULE_HEIGHT - CAPSULE_RADIUS * 2, // parte cilíndrica
-  4,
-  8
-);
-
-const capsuleMaterial = new THREE.MeshBasicMaterial({
-  color: 0xff0000,
-  wireframe: true // ajuda muito a depurar
-});
-
-const capsuleMesh = new THREE.Mesh(capsuleGeometry, capsuleMaterial);
-scene.add(capsuleMesh);
-
-
 
 
 // Camera ________________________________________________________________________
@@ -82,8 +37,6 @@ const camera = new THREE.OrthographicCamera(
 camera.position.x = 8.7;
 camera.position.y = 4.1;
 camera.position.z = -9.1;
-
-const cameraOffset = new THREE.Vector3( camera.position.x, camera.position.y, camera.position.z); 
 
 scene.add( camera );
 
@@ -109,19 +62,9 @@ loader.load(
 
             // console.log(child);
 
-            if( child.name === "coelho"){
-                character.instance = child;
-                playerCollider.start
-                    .copy(child.position)
-                    .add(new THREE.Vector3(0, CAPSULE_RADIUS, 0));
-
-            };
-
             if( child.name === "colisao"){
-                colliderOctree.fromGraphNode(child);
                 child.visible = false;
             };
-
         } );
         
         scene.add( glb.scene );
@@ -186,16 +129,6 @@ const content = {
 
 // Handlers de Eventos ________________________________________________________________________
 
-function updateCapsuleMesh() {
-    const capsuleHeightTotal = CAPSULE_HEIGHT + CAPSULE_RADIUS * 2;
-
-    capsuleMesh.position.set(
-        playerCollider.start.x,
-        playerCollider.start.y + capsuleHeightTotal / 2 - CAPSULE_RADIUS,
-        playerCollider.start.z
-    );
-}
-
 function onResize(){
     size.width = window.innerWidth;
     size.height = window.innerHeight;
@@ -233,102 +166,22 @@ function onClick(){
     }
 };
 
-function onKeyDown( event ){  
-    if( character.isMoving ) return;
-
-    switch ( event.key.toLowerCase() ) {
-        case 'w':
-            playerVelocity.x -= MOVE_SPEED;
-            targetRotation = 0;
-            
-            console.log("w pressed");
-            break;
-
-        case 'a':
-            playerVelocity.z += MOVE_SPEED;
-            targetRotation = -Math.PI / 2;
-            
-            console.log("a pressed");
-            break;
-
-        case 's':
-            playerVelocity.x += MOVE_SPEED;
-            targetRotation = Math.PI;
-            
-            console.log("s pressed");
-            break;
-        
-        case 'd':
-            playerVelocity.z -= MOVE_SPEED;
-            targetRotation = Math.PI / 2;
-            
-            console.log("d pressed");
-            break;
-    
-        default:
-            break;
-        
-        };
-
-    playerVelocity.y = JUMP_HEIGHT;
-    character.isMoving = true;
-    
-};
-
 function updateModalContent(){
     const modalTitle = document.querySelector(".modal-header-wrapper");
     const modalContent = document.querySelector(".modal-content-wrapper");
 
     modalTitle.innerHTML = content.title;
     modalContent.innerHTML = content.content;
-
-
 };
 
 function highLight( element ){
     document.body.style.cursor = "pointer";
 };
 
-function playerCollision(){
-    const result = colliderOctree.capsuleIntersect( playerCollider );
-    playerOnFloor = false;
-
-    if( result ){
-        playerOnFloor = result.normal.y > 0;
-        playerCollider.translate( result.normal.clone().multiplyScalar( result.depth ) );
-
-        if( playerOnFloor ){
-            character.isMoving = false;
-            playerVelocity.x = 0;
-            playerVelocity.y = 0;
-        }
-    }
-}
-
-function updatePlayer(){
-    if( !character.instance ) return;
-
-    if( !playerOnFloor ){
-        playerVelocity.y -= GRAVITY * 0.01;
-    }
-
-    playerCollider.translate(playerVelocity.clone().multiplyScalar(0.01));
-    playerCollision();
-
-    character.instance.position.copy(playerCollider.start);
-    character.instance.position.y -= CAPSULE_RADIUS;
-
-    character.instance.rotation.y = THREE.MathUtils.lerp( 
-        character.instance.rotation.y, 
-        targetRotation, 
-        0.1 
-    );
-}
-
 window.addEventListener( "pointermove", onPointerMove );
 window.addEventListener( "resize", onResize );
 window.addEventListener( "click", onClick );
-window.addEventListener( "keydown", onKeyDown );
+
 
 // Loop ________________________________________________________________________
 
@@ -350,15 +203,6 @@ function animate() {
         if( intersects.length > 1 ) intersectObjectPanel = intersects[ 1 ].object.parent.name;
         
     }
-
-    updateCapsuleMesh();
-
-    updatePlayer();
-    
-    // if( character.instance ){
-    //     camera.position.copy( character.instance.position ).add( cameraOffset );
-    //     camera.lookAt( character.instance.position );
-    // } 
     
     document.body.style.cursor = "default";
     if(intersectObjectPanel === "painel")  highLight( intersectObject );
